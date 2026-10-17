@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+server="${CERTBOT_SERVER:-https://acme-v02.api.letsencrypt.org/directory}"
+
+certbot certonly \
+  --standalone \
+  --http-01-port 8080 \
+  --non-interactive \
+  --agree-tos \
+  --keep-until-expiring \
+  --email "{{ operator_email }}" \
+  --cert-name webtransport \
+  --domain "{{ ansible_host }}" \
+  --server "$server"
+
+while :; do
+  sleep 12h
+  certbot renew --standalone --http-01-port 8080 --non-interactive --quiet --server "$server"
+done

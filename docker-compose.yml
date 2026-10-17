@@ -43,6 +43,24 @@ services:
     logging:
       driver: local
 
+  certbot-http01:
+    image: certbot/certbot:v5.8.0
+    profiles: [certbot-http01]
+    init: true
+    entrypoint: [/bin/sh, /config/entrypoint.sh]
+    environment:
+      CERTBOT_SERVER: ${CERTBOT_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
+    volumes:
+      - ${PWD}/dist/certbot-http01/entrypoint.sh:/config/entrypoint.sh:ro
+      - ${PWD}/dist/certbot-http01/letsencrypt:/etc/letsencrypt
+      - ${PWD}/dist/certbot-http01/lib:/var/lib/letsencrypt
+      - ${PWD}/dist/certbot-http01/log:/var/log/letsencrypt
+    restart: unless-stopped
+    depends_on:
+      caddy: { condition: service_started }
+    logging:
+      driver: local
+
   nfd:
     image: ghcr.io/named-data/nfd:20250420
     init: true

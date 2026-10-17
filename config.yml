@@ -6,6 +6,12 @@ host_vars_path: host_vars
 
 # This must match exactly with the docker-compose.yml file
 services:
+  certbot-http01:
+    hosts: [UCLA]
+    profile: certbot-http01
+    template_path: templates/certbot-http01
+    render_path: dist/certbot-http01
+
   caddy:
     template_path: templates/caddy
     render_path: dist/caddy
@@ -102,3 +108,4 @@ variables:
   ethernet_device: string
   is_root_ca: "?boolean"
   is_status_page: "?boolean"
+  acme_http01: "?boolean"

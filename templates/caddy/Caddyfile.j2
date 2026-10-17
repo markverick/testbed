@@ -1,3 +1,15 @@
+{% if acme_http01 is defined and acme_http01 %}
+http://{{ ansible_host }} {
+  handle /.well-known/acme-challenge/* {
+    reverse_proxy http://certbot-http01:8080
+  }
+
+  handle {
+    redir https://{host}{uri} 308
+  }
+}
+{% endif %}
+
 {{ ansible_host }} {
   @nfdstatus path / /nfd-status.xsl /xslt-polyfill.min.js /*.css
   reverse_proxy @nfdstatus http://nfd-http-status-server:6380
