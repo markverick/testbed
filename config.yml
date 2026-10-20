@@ -13,14 +13,33 @@ services:
     render_path: dist/ndnd
 
   ndnd-dv:
-    enabled_by: ndnd_enabled
-    profile: ndnd
+    enabled_by: ndnd_dv_enabled
+    profile: ndnd-dv
     template_path: templates/ndnd-dv
-    render_path: dist/ndnd-dv
+    render_path: dist/ndnd-dv-independent
 
   ndnd-http-status-server:
     enabled_by: ndnd_enabled
     profile: ndnd
+    pass: on
+
+  ndnd-pingserver:
+    enabled_by: ndnd_dv_enabled
+    profile: ndnd-dv
+    template_path: templates/ndnd-pingserver
+    render_path: dist/ndnd-pingserver
+
+  ndnd-root-ca:
+    enabled_by: ndnd_enabled
+    host_from_global: ndnd_ca_host
+    profile: ndnd-root-ca
+    template_path: templates/ndnd-root-ca
+    render_path: dist/ndnd-root-ca
+
+  ndnd-root-http-ca:
+    enabled_by: ndnd_enabled
+    host_from_global: ndnd_ca_host
+    profile: ndnd-root-ca
     pass: on
 
   caddy:
@@ -92,7 +111,17 @@ globals:
   ndnd_repo_anchors:
     - anchors/ndn-testbed-root.ndncert.2204.base64
   ndnd_udp_port: 6364
-  ndnd_dv_network: /ndn/edu
+  ndnd_dv_network: /ndnd
+  ndnd_ca_host: UCLA
+  ndnd_root_ca_profile_url: https://suns.cs.ucla.edu/file-server/ndnd/ndnd-ca-profile.json
+  ndnd_root_certificate_url: https://suns.cs.ucla.edu/file-server/ndnd/ndnd-root.ndncert
+  ndnd_root_http_ca_url: https://suns.cs.ucla.edu/ndnd-ca
+  ndnd_root_certificate_sha256: ""
+  ndnd_root_anchor_path: dist/ndnd-dv-independent/anchors/ndnd-root.base64
+  ndnd_links:
+    - { a: UCLA, b: ARIZONA, cost: 1 }
+    - { a: UCLA, b: MEMPHIS, cost: 1 }
+    - { a: ARIZONA, b: MEMPHIS, cost: 1 }
 
 # Declare variables available for each host
 # You can use lint.py to check variables, their types and
@@ -122,3 +151,5 @@ variables:
   is_root_ca: "?boolean"
   is_status_page: "?boolean"
   ndnd_enabled: "?boolean"
+  ndnd_dv_enabled: "?boolean"
+  ndnd_router_prefix: "?string"

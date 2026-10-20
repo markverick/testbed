@@ -37,6 +37,8 @@ def get() -> Config:
 def service_enabled(service: dict, node: str) -> bool:
     if 'hosts' in service and node not in service['hosts']:
         return False
+    if 'host_from_global' in service and node != get().globals[service['host_from_global']]:
+        return False
     enabled_by = service.get('enabled_by')
     if enabled_by is None:
         return True

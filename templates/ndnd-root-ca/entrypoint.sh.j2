@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -eu
+
+export HOME=/config
+PUBLIC_DIR=/public
+CERT_FILE="${PUBLIC_DIR}/ndnd-root.ndncert"
+PROFILE_FILE="${PUBLIC_DIR}/ndnd-ca-profile.json"
+
+mkdir -p "${PUBLIC_DIR}"
+if ! CERT_NAME="$(ndnsec get-default -c -i {{ ndnd_dv_network | tojson }} -q 2>/dev/null)"; then
+    if ndnsec get-default -i {{ ndnd_dv_network | tojson }} -q >/dev/null 2>&1; then
+        echo "NDNd root identity exists without a default certificate; refusing to rotate it" >&2
+        exit 1
+    fi
+    ndnsec key-gen {{ ndnd_dv_network | tojson }}
+    CERT_NAME="$(ndnsec get-default -c -i {{ ndnd_dv_network | tojson }} -q)"
+fi
+
+TEMP_CERT_B64="$(mktemp)"
+TEMP_CERT_WIRE="$(mktemp)"
+trap 'rm -f "${TEMP_CERT_B64}" "${TEMP_CERT_WIRE}"' EXIT
+ndnsec cert-dump -n "${CERT_NAME}" > "${TEMP_CERT_B64}"
+test -s "${TEMP_CERT_B64}"
+base64 -d "${TEMP_CERT_B64}" > "${TEMP_CERT_WIRE}"
+test -s "${TEMP_CERT_WIRE}"
+install -m 0644 "${TEMP_CERT_WIRE}" "${CERT_FILE}"
+CERT_SHA256="$(sha256sum "${CERT_FILE}" | awk '{print $1}')"
+
+sed \
+    -e "s|@ROOT_CERTIFICATE_NAME@|${CERT_NAME}|g" \
+    -e "s|@ROOT_CERTIFICATE_SHA256@|${CERT_SHA256}|g" \
+    /ca/ndnd-ca-profile.json > "${PROFILE_FILE}.tmp"
+chmod 0644 "${PROFILE_FILE}.tmp"
+mv -f "${PROFILE_FILE}.tmp" "${PROFILE_FILE}"
+
+exec /usr/bin/ndncert-ca-server -c /ca/ndncert-ca.conf

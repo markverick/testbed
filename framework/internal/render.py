@@ -8,6 +8,7 @@ from ndn.app_support.light_versec import compile_lvs
 from . import conf
 from . import compose
 from . import utils
+from .ndnd import bootstrap_ndnd_root, validate_ndnd_topology
 
 JINJA_FUNCTIONS = {
     'path_exists': lambda path: os.path.exists(path),
@@ -58,6 +59,24 @@ def render(node_name: str, dry: bool = False) -> None:
                 all_host_vars[host_name].update(config.globals)
             except yaml.YAMLError as exc:
                 print("Error reading host vars file: ", host_path, exc, file=sys.stderr)
+
+    if any(values.get('ndnd_dv_enabled', False) for values in all_host_vars.values()):
+        config.globals['ndnd_root_cert_name'] = bootstrap_ndnd_root(
+            config.globals['ndnd_root_ca_profile_url'],
+            config.globals['ndnd_root_certificate_url'],
+            config.globals.get('ndnd_root_certificate_sha256', ''),
+            config.globals['ndnd_dv_network'],
+            config.globals['ndnd_root_anchor_path'],
+        )
+        for values in all_host_vars.values():
+            values['ndnd_root_cert_name'] = config.globals['ndnd_root_cert_name']
+
+    validate_ndnd_topology(
+        all_host_vars,
+        config.globals['ndnd_dv_network'],
+        config.globals['ndnd_links'],
+        config.globals.get('ndnd_root_cert_name', ''),
+    )
 
     # Rendering variables for this node
     render_vars = all_host_vars[node_name].copy()

@@ -31,4 +31,7 @@ export COMPOSE_PROFILES
 # Ensure services are running
 docker compose up -d --remove-orphans
 
+# Reconcile app prefixes after service starts/restarts have assigned their faces.
+docker compose exec -T master python3 framework/ndnd-prefix-reconcile.py || exit $?
+
 echo -e "Finished cron-host at $(date)" >&2

@@ -22,8 +22,8 @@ bash "$(pwd)/dist/ndnd-repo/renew.sh" ${FORCE:+"${FORCE}"} || exit $?
 
 DV_ENABLED=$(python3 framework/service-profiles.py --service ndnd-dv) || exit $?
 if [[ "${DV_ENABLED}" == 1 ]]; then
-    DV_DIR=dist/ndnd-dv
-    bash "${DV_DIR}/renew.sh" ${FORCE:+"${FORCE}"} || exit $?
+    DV_DIR=dist/ndnd-dv-independent
+    bash "${DV_DIR}/renew.sh" || exit $?
     if [[ -f "${DV_DIR}/.security-changed" ]]; then
         RUNNING_DV=$(PWD="${ROOT_DIR:-$PWD}" docker compose ps --status running -q ndnd-dv) || exit $?
         if [[ -n "${RUNNING_DV}" ]]; then

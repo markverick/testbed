@@ -26,6 +26,7 @@ services:
 
   caddy:
     image: ghcr.io/named-data/testbed-caddy:20260423
+    networks: [default, ndnd-ca]
     cap_add:
       - NET_ADMIN
     ports:
@@ -44,9 +45,9 @@ services:
       driver: local
 
   ndnd:
-    image: ndnd-dv2:c8daa9c
+    image: ndnd-dv2:948ea55
     build:
-      context: https://github.com/markverick/ndnd.git#c8daa9ce9f675b7c02ead3e579321bd86fdd9e53
+      context: https://github.com/markverick/ndnd.git#948ea55b536e0ed0f45a36e81a105b069ce9d8fd
     profiles: [ndnd]
     init: true
     volumes:
@@ -68,16 +69,16 @@ services:
       driver: local
 
   ndnd-dv:
-    image: ndnd-dv2:c8daa9c
+    image: ndnd-dv2:948ea55
     build:
-      context: https://github.com/markverick/ndnd.git#c8daa9ce9f675b7c02ead3e579321bd86fdd9e53
-    profiles: [ndnd]
+      context: https://github.com/markverick/ndnd.git#948ea55b536e0ed0f45a36e81a105b069ce9d8fd
+    profiles: [ndnd-dv]
     init: true
     volumes:
       - /run/ndnd:/run/ndnd:ro
-      - ${PWD}/dist/ndnd-dv/dv.yml:/config/dv.yml:ro
-      - ${PWD}/dist/ndnd-dv/dv-schema.tlv:/config/dv-schema.tlv:ro
-      - ${PWD}/dist/ndnd-dv/keys:/config/keys
+      - ${PWD}/dist/ndnd-dv-independent/dv.yml:/config/dv.yml:ro
+      - ${PWD}/dist/ndnd-dv-independent/dv-schema.tlv:/config/dv-schema.tlv:ro
+      - ${PWD}/dist/ndnd-dv-independent/keys:/config/keys
     environment:
       NDN_CLIENT_TRANSPORT: unix:///run/ndnd/ndnd.sock
     command: [dv, run, /config/dv.yml]
@@ -92,9 +93,9 @@ services:
       driver: local
 
   ndnd-http-status-server:
-    image: ndnd-dv2:c8daa9c
+    image: ndnd-dv2:948ea55
     build:
-      context: https://github.com/markverick/ndnd.git#c8daa9ce9f675b7c02ead3e579321bd86fdd9e53
+      context: https://github.com/markverick/ndnd.git#948ea55b536e0ed0f45a36e81a105b069ce9d8fd
     profiles: [ndnd]
     init: true
     volumes:
@@ -108,6 +109,100 @@ services:
     restart: unless-stopped
     depends_on:
       ndnd: { condition: service_healthy }
+    logging:
+      driver: local
+
+  ndnd-pingserver:
+    image: ghcr.io/named-data/ndn-tools:20250520
+    profiles: [ndnd-dv]
+    init: true
+    volumes:
+      - /run/ndnd:/run/ndnd:ro
+      - ${PWD}/dist/ndnd-pingserver:/config:ro
+    environment:
+      NDN_CLIENT_TRANSPORT: unix:///run/ndnd/ndnd.sock
+    entrypoint: [/bin/bash]
+    command: [/config/entrypoint.sh]
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    depends_on:
+      ndnd: { condition: service_healthy }
+      ndnd-dv: { condition: service_started }
+    logging:
+      driver: local
+
+  ndnd-root-ca:
+    image: ghcr.io/ucla-irl/ndncert-ca:20250923
+    profiles: [ndnd-root-ca]
+    init: true
+    volumes:
+      - /run/ndnd:/run/ndnd:ro
+      - ${PWD}/ndnd-root-ca-home:/config
+      - ${PWD}/dist/ndnd-root-ca:/ca:ro
+      - ${PWD}/dist/file-server/ndnd:/public
+    environment:
+      HOME: /config
+      NDN_CLIENT_TRANSPORT: unix:///run/ndnd/ndnd.sock
+      NDN_LOG: ndncert.challenge.pin=TRACE
+    entrypoint: [/bin/sh, /ca/entrypoint.sh]
+    network_mode: none
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "test -s /public/ndnd-root.ndncert && test -s /public/ndnd-ca-profile.json"]
+      interval: 10s
+      start_period: 15s
+      retries: 6
+    depends_on:
+      ndnd: { condition: service_healthy }
+    logging:
+      driver: local
+
+  ndnd-root-http-ca:
+    image: ghcr.io/named-data/testbed-master:20261012
+    profiles: [ndnd-root-ca]
+    networks: [ndnd-ca]
+    init: true
+    tty: true
+    volumes:
+      - ${PWD}/ndnd-root-ca-home:/config
+      - ${PWD}/dist/ndnd-root-ca/http-ca-server.yml:/config/http-ca-server.yml:ro
+      - ${PWD}/framework/http-ca-server.py:/app/http-ca-server.py:ro
+    environment:
+      HOME: /config
+      NDND_ROOT_CA_SECRET: ${VAR_NDND_ROOT_CA_SECRET:-}
+    entrypoint: [/app/http-ca-server.py]
+    command: [/config/http-ca-server.yml]
+    restart: unless-stopped
+    depends_on:
+      master: { condition: service_healthy }
+      ndnd-root-ca: { condition: service_healthy }
+    logging:
+      driver: local
+
+  ndnd-dv-enroll:
+    image: ndnd-dv2:948ea55
+    build:
+      context: https://github.com/markverick/ndnd.git#948ea55b536e0ed0f45a36e81a105b069ce9d8fd
+    profiles: [ndnd-enroll]
+    init: true
+    volumes:
+      - /run/ndnd:/run/ndnd:ro
+      - ${PWD}/dist/ndnd-dv-independent/keys:/config/keys
+      - ${PWD}/dist/file-server/ndnd/ndnd-root.ndncert:/config/ndnd-root.ndncert:ro
+      - ${PWD}/dist/ndnd-dv-independent/enrollment:/config/enrollment
+    environment:
+      NDN_CLIENT_TRANSPORT: unix:///run/ndnd/ndnd.sock
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     logging:
       driver: local
 
@@ -338,3 +433,7 @@ services:
       nfd: { condition: service_healthy }
     logging:
       driver: local
+
+networks:
+  ndnd-ca:
+    internal: true

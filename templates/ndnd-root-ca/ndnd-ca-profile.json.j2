@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "ca_prefix": "{{ ndnd_dv_network }}",
+  "ca_info": "NDNd parallel testbed CA",
+  "max_validity_period_seconds": 7776000,
+  "max_suffix_length": 2,
+  "probe_parameters": [],
+  "supported_challenges": ["pin"],
+  "router_identity_suffix": "/32=DV",
+  "root_certificate_url": "{{ ndnd_root_certificate_url }}",
+  "root_certificate_name": "@ROOT_CERTIFICATE_NAME@",
+  "root_certificate_sha256": "@ROOT_CERTIFICATE_SHA256@",
+  "bootstrap_csr_signing_endpoint": "https://suns.cs.ucla.edu/ndnd-ca/sign",
+  "trust_schema_url": "https://suns.cs.ucla.edu/file-server/ndnd/dv-schema.tlv",
+  "certificate_request": "Generate a key for /ndnd/<router>/32=DV, then run ndnd certcli with this CA certificate, --challenge pin, --no-probe, and the key file. The CA operator relays the one-time PIN. Automated router provisioning and renewal use the HTTPS bootstrap signer."
+}

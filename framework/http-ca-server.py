@@ -12,6 +12,7 @@ from urllib.parse import parse_qs
 
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from internal.ndnd import is_certificate_request_name
 
 @dataclass
 class Config:
@@ -52,9 +53,9 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         # Validate prefix of the CSR
         pfx = host['prefix']
         name = ndn.encoding.ndn_format_0_3.parse_data(base64.b64decode(data))[0]
-        if not ndn.encoding.name.Name.is_prefix(pfx, name):
+        if not is_certificate_request_name(pfx, name):
             str_name = ndn.encoding.name.Name.to_str(name)
-            self.send_error(400, f"Invalid name {str_name}, expected prefix {pfx}")
+            self.send_error(400, f"Invalid certificate request name {str_name}, expected KEY/key-id/self/version below {pfx}")
             return
 
         not_before = params.get('not_before', [])
@@ -138,7 +139,12 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     # Read YAML config
     with open(sys.argv[1], 'r') as f:
-        config = Config(**yaml.safe_load(f))
+        config_data = yaml.safe_load(f)
+    if os.environ.get('NDND_ROOT_CA_SECRET'):
+        config_data['secret'] = os.environ['NDND_ROOT_CA_SECRET']
+    if not config_data.get('secret'):
+        raise RuntimeError('HTTP CA secret must be configured')
+    config = Config(**config_data)
 
     # Start server
     server_address = ('', config.port)

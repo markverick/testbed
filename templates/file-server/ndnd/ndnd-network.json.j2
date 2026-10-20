@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "network_prefix": {{ ndnd_dv_network | tojson }},
+  "nodes": [
+    {% for host, values in hostvars.items() if values.get('ndnd_enabled', false) %}
+    {
+      "inventory_name": {{ host | tojson }},
+      "name": {{ values.site_name | tojson }},
+      "router_prefix": {{ values.ndnd_router_prefix | tojson }},
+      "router_identity": {{ (values.ndnd_router_prefix + '/32=DV') | tojson }},
+      "ip_addresses": [{{ values.host_ip | tojson }}],
+      "udp_port": {{ ndnd_udp_port }},
+      "ping_prefix": {{ (values.ndnd_router_prefix + '/ping') | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ],
+  "links": [
+    {% for link in ndnd_links %}
+    {
+      "node_a": {{ hostvars[link.a].ndnd_router_prefix | tojson }},
+      "node_b": {{ hostvars[link.b].ndnd_router_prefix | tojson }},
+      "cost": {{ link.cost }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}

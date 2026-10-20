@@ -2,15 +2,20 @@
 
 set -eu
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TESTBED_DIR="$(cd "${REPO_DIR}/../.." && pwd)"
-ROOT_CA_SECRET={{ ROOT_CA_SECRET | tojson }}
-export ROOT_CA_SECRET
+TESTBED_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_DIR="${TESTBED_DIR}/dist/ndnd-dv-independent"
+if [[ -f "${TESTBED_DIR}/.env" ]]; then
+    source "${TESTBED_DIR}/.env"
+fi
+NDND_ROOT_CA_SECRET="${VAR_NDND_ROOT_CA_SECRET:-}"
+: "${NDND_ROOT_CA_SECRET:?Set VAR_NDND_ROOT_CA_SECRET in the untracked .env file}"
+export NDND_ROOT_CA_SECRET
 
 python3 "${TESTBED_DIR}/scripts/ndnd-infra-security.py" \
     --directory "${REPO_DIR}" \
     --site-home "${TESTBED_DIR}/dist/ndncert" \
-    --site-prefix {{ default_prefix | tojson }} \
-    --anchors "${TESTBED_DIR}/anchors" \
+    --site-prefix {{ ndnd_router_prefix | tojson }} \
+    --anchors "${REPO_DIR}/anchors" \
     --service dv \
-    --root-ca-url {{ root_ca_https | tojson }} "$@"
+    --root-ca-url {{ ndnd_root_http_ca_url | tojson }} \
+    --root-cert "${REPO_DIR}/anchors/ndnd-root.base64" "$@"

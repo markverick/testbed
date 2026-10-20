@@ -45,3 +45,5 @@ hr_radius: 16.5866
 ethernet_device: eth0
 is_root_ca: true
 ndnd_enabled: true
+ndnd_dv_enabled: false
+ndnd_router_prefix: /ndnd/ucla
