@@ -94,7 +94,7 @@ services:
       driver: local
 
   ndnd-pingserver:
-    image: ghcr.io/markverick/testbed-ndnd-tools:20261102@sha256:80881297a8717c99e0d4e01b48417109ebf77b6eb2179b63b320867bf07755ec
+    image: ghcr.io/markverick/testbed-ndnd-tools:ndnd-staging@sha256:3c325f9a688d95c2d6b111bef4e73d13d80fb79e476d2420c2c1ef271e5f6e34
     pull_policy: always
     profiles: [ndnd]
     init: true
