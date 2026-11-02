@@ -33,3 +33,4 @@ jobs:
     with:
       name: testbed-ndnd-tools
       target: testbed-ndnd-tools
+      tag-with-sha: true
