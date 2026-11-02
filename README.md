@@ -71,7 +71,7 @@ Each node runs the pinned `ndnd-repo` container with identity `<default_prefix>/
 
 ## NDNd Distance Vector
 
-Nodes with `ndnd_enabled: true` run the NDNd forwarder and a separate `ndnd dv` router. The router connects only to the forwarder's `/run/ndnd/ndnd.sock` and exchanges DV traffic over the forwarder's UDP listener on port 6364; it does not use NFD's socket or NLSR. Router identities are root-signed as `<default_prefix>/32=DV`, and each router has permanent UDP neighbor links to the other NDNd-enabled nodes.
+Nodes with `ndnd_enabled: true` run the NDNd forwarder and a separate `ndnd dv` router. The router connects to the forwarder's `/run/ndnd/ndnd.sock` and exchanges DV traffic over its UDP listener on port 6364. Router identities are root-signed as `<ndnd_router_prefix>/32=DV`, and peers are selected from the existing NLSR neighbor inventory, limited to NDNd-enabled sites.
 
 ## NDNd Merkle
 
