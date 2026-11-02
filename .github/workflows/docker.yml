@@ -22,3 +22,8 @@ jobs:
     with:
       name: testbed-caddy
       target: testbed-caddy
+  testbed-ndnd-tools:
+    uses: named-data/actions/.github/workflows/docker-image.yml@v1
+    with:
+      name: testbed-ndnd-tools
+      target: testbed-ndnd-tools
