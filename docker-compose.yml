@@ -332,7 +332,7 @@ services:
       driver: local
 
   ndnd-network-repo:
-    image: ghcr.io/named-data/ndnd:dv2-staging@sha256:ba13140ce270c8186bb61f4ae69ee0e86cc977c0144db931efbea2ce76515a89
+    image: ghcr.io/named-data/ndnd:dv2-staging@sha256:cd362167f0d34804ba79cc33ba654e35d666f39c9a729debafe0e93b40348a9c
     profiles: [ndnd]
     init: true
     volumes:
